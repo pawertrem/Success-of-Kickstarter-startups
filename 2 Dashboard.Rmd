@@ -1,0 +1,80 @@
+---
+title: "Построение предсказания относительно успешности проекта (общие выводы)"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(flexdashboard)
+library(readr)
+kickstarter = read_csv("C:/Users/User/Desktop/DATA/WD/kickstarter.csv")
+USD = read_csv("C:/Users/User/Desktop/DATA/WD/usd_goals.csv")
+library(rpart)
+library(rpart.plot)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library (coin)
+library(party)
+#Добавляем к имеющемуся датасету колонку, содержащую информацию о планируемой сумме в валюте USD
+kickstarter=kickstarter%>%left_join(USD, by="id")%>%select(-goal.y)
+kickstarter$launched=as.Date(kickstarter$launched)
+kickstarter=kickstarter%>%mutate(term=deadline-launched)
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Дерево решений
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+set.seed(333)
+# Возьмем 80% как обучающие
+kick_train = kickstarter %>% sample_frac(.8)
+# создаем тестовый набор 
+kick_test = anti_join(kickstarter, kick_train, by = 'id') 
+tree1 <- rpart(state ~ main_category+usd_goal_real+term, method = "class", data = kick_train)
+prp(tree1, extra=8, digits=-1, box.palette = "auto", cex=0.85)
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Точность предсказания
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+pred = predict(tree1, type="class", data = credits_train)
+t=table(pred, kick_train$state)
+accuracy=round((t[1,1] + t[2,2])/sum(t), 2)
+valueBox(accuracy, color="#04B45F")
+```
+
+### Топ-3 категории с самой высокой долей успешных проектов
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+suc=kickstarter%>%filter(state=="successful")%>%group_by(main_category)%>%count()
+overall=kickstarter%>%group_by(main_category)%>%count()
+suc=suc%>%left_join(overall, by="main_category")
+suc=suc%>%mutate(suc_share=round(n.x/n.y, 2))%>%arrange(-suc_share)%>%select(main_category, suc_share)%>%head(n=3)
+colnames(suc)=c("Основная категория", "Доля успешных проектов")
+DT::datatable(suc, options = list(
+bPaginate = TRUE
+))
+```
+
+### Средняя планируемая сумма среди успешных проектов (в USD)
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+meangoal=kickstarter%>%group_by(state)%>%summarise(meang=round(mean(usd_goal_real), 0))%>%filter(state=="successful")%>%select(meang)
+valueBox(meangoal)
+```
+
+### Средний срок сбора средств среди успешных проектов (в днях)
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+meanterm=kickstarter%>%group_by(state)%>%summarize(mean_term=round(mean(term),0))%>%filter(state=="successful")%>%select(mean_term)
+valueBox(meanterm)
+```
+
