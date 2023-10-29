@@ -1,2 +1,5 @@
-# Success-of-Kickstarter-startups
-Analysis is based on two datasets: descriptions of prjects (category, deadline, goal, etc.) and data on whether project raised necesarry funds or not. First of all, a short EDA is provided to understand which factors should be taken into account, then various hypotheses are put and checked by statistical methods. Finally, a dashboard on R is built which depicts main results of analysis (code is written on the R language).
+# Успех стартапов на Kickstarter
+
+Анализ основан на двух наборах данных: описаниях проектов (категория, сроки, целевая сумма и т. д.) и данных о том, собрал ли проект необходимые средства или нет. На основе предварительного EDA выдвигаются гипотезы, объясняющие потенциальные факторы успешности стартапов, затем они проверяются с помощью статистических тестов. Основные результаты документируются на дэшборде (см. файл Dashboard_Screenshot.jpg)
+
+Весь код для визуализации, проверки гипотез и построения дэшборда написан на R.
